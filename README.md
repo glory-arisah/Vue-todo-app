@@ -3,9 +3,10 @@
 
 ### Future Implementation
 1. Use an backend like Firebase to persist the todo items to a database.
+2. Add a dialogue for confirm user wants to delete an item.
 
 ### Project setup
-1. `yarn clone git@github.com:glory-arisah/Vue-todo-app.git`
+1. `git clone git@github.com:glory-arisah/Vue-todo-app.git`
 2. `yarn install`
 
 ### Compiles and hot-reloads for development
