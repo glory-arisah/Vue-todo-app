@@ -1,24 +1,19 @@
-# todo-list
+# Todo app with Vue
+#### A simple ToDo application that allows user to create, update and delete their tasks.
 
-## Project setup
-```
-yarn install
-```
+### Future Implementation
+1. Use an backend like Firebase to persist the todo items to a database.
+
+### Project setup
+1. `yarn clone git@github.com:glory-arisah/Vue-todo-app.git`
+2. `yarn install`
 
 ### Compiles and hot-reloads for development
-```
-yarn serve
-```
+`yarn serve`
 
 ### Compiles and minifies for production
-```
-yarn build
-```
+`yarn build`
 
 ### Lints and fixes files
-```
-yarn lint
-```
+`yarn lint`
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
