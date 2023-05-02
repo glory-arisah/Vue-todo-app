@@ -26,50 +26,59 @@
     <section class="all-todos">
         <!-- list of the remaining todos -->
         <section class="mb-3">
-          <section v-for="todo in todos" :key="todo.id" class="todos">
+          <h3>List</h3>
+          <template v-if="todosCount > 0">
+            <section v-for="todo in todos" :key="todo.id" class="todos">
+              <p class="todo">
+                <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("todos", todo.id)' :checked="todo.done"  false-value=false true-value=true />
+                <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
+              </p>
+              <p><button v-show="!todo.done" @click="addToHitList(todo.id)" class="hit-list">hitlist</button></p>
+              <div class="action-btns">
+                <font-awesome-icon v-show="!todo.done"
+                  :icon="['fas', 'fa-pencil']"
+                  class="btn"
+                  @click="editTodo('todos', todo.id)"
+                />
+
+                <font-awesome-icon
+                  :icon="['fas', 'fa-times']"
+                  class="btn"
+                  @click="deleteTodo('todos', todo.id)"
+                />
+              </div>
+            </section>
+          </template>
+          <template v-else><p>No task(s) -- type in a value to add a todo now!!</p></template>
+        </section>
+
+      <!-- list of all hitlist items -->
+      <div>
+        <h3>Hit list</h3>
+        <template v-if="hitListCount > 0">
+          <section v-for="todo in hitList" :key="todo.id" class="todos">
             <p class="todo">
-              <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("todos", todo.id)' :checked="todo.done"  false-value=false true-value=true />
+              <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("hitList", todo.id)' :checked="todo.done"  false-value=false true-value=true />
               <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
             </p>
-            <p><button v-show="!todo.done" @click="addToHitList(todo.id)" class="hit-list">hitlist</button></p>
+            <p><button v-show="!todo.done" @click="removeFromHitList(todo.id)" class="hit-list">revert</button></p>
             <div class="action-btns">
               <font-awesome-icon v-show="!todo.done"
                 :icon="['fas', 'fa-pencil']"
                 class="btn"
-                @click="editTodo('todos', todo.id)"
+                @click="editTodo('hitList', todo.id)"
               />
 
               <font-awesome-icon
                 :icon="['fas', 'fa-times']"
                 class="btn"
-                @click="deleteTodo('todos', todo.id)"
+                @click="deleteTodo('hitList', todo.id)"
               />
             </div>
           </section>
-        </section>
-
-      <!-- list of all hitlist items -->
-      <h3>Hit list</h3>
-      <section v-for="todo in hitList" :key="todo.id" class="todos">
-        <p class="todo">
-          <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("hitList", todo.id)' :checked="todo.done"  false-value=false true-value=true />
-          <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
-        </p>
-        <p><button v-show="!todo.done" @click="removeFromHitList(todo.id)" class="hit-list">revert</button></p>
-        <div class="action-btns">
-          <font-awesome-icon v-show="!todo.done"
-            :icon="['fas', 'fa-pencil']"
-            class="btn"
-            @click="editTodo('hitList', todo.id)"
-          />
-
-          <font-awesome-icon
-            :icon="['fas', 'fa-times']"
-            class="btn"
-            @click="deleteTodo('hitList', todo.id)"
-          />
-        </div>
-      </section>
+        </template>
+        <template v-else><p>No hit list task</p></template>
+      </div>
     </section>
   </section>
 </template>
@@ -187,6 +196,14 @@ export default {
       this.todos.push(todo)
     }
   },
+  computed: {
+    hitListCount() {
+      return this.hitList.length
+    },
+    todosCount() {
+      return this.todos.length
+    }
+  }
 };
 </script>
 
@@ -245,7 +262,7 @@ h2 {
 }
 /* form container for input field */
 .input form {
-  width: 100%;
+  /* width: 100%; */
 }
 /* input field */
 .input input {
@@ -262,9 +279,7 @@ h2 {
 
 /* plus icon for adding todo */
 .plus-icon {
-  font-size: 1rem;
-  padding-block: 0.9rem;
-  border: 1px solid var(--clr-blue-light);
+  padding-block: .85rem;
   background-color: var(--clr-blue-light);
   color: white;
   width: 100%;
@@ -318,5 +333,23 @@ h2 {
 }
 .btn:hover {
   color: var(--clr-blue-dark);
+}
+
+@media screen and (min-width: 992px) {
+  .main-section {
+    display: grid;
+    width: 75vw;
+  }
+
+  .input {
+    grid-column: 1 / -1;
+  }
+
+  .all-todos {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
 }
 </style>
