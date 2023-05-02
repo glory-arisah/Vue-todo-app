@@ -1,6 +1,6 @@
 <template>
-  <p v-if="errorStatus">Please input a value</p>
-  <h2>Todo list</h2>
+  <h2 class="align-center">Todo list</h2>
+  <p v-if="errorStatus" class="align-center error">Please input a value</p>
   <section class="main-section">
     <!-- input field to add a todo item -->
     <section class="input">
@@ -23,21 +23,50 @@
         />
       </template>
     </section>
-    <!-- list of all items -->
     <section class="all-todos">
-      <section v-for="todo in todos" :key="todo.id" class="todos">
-        <p class="todo">{{ todo.title }}</p>
-        <p></p>
+        <!-- list of the remaining todos -->
+        <section class="mb-3">
+          <section v-for="todo in todos" :key="todo.id" class="todos">
+            <p class="todo">
+              <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("todos", todo.id)' :checked="todo.done"  false-value=false true-value=true />
+              <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
+            </p>
+            <p><button v-show="!todo.done" @click="addToHitList(todo.id)" class="hit-list">hitlist</button></p>
+            <div class="action-btns">
+              <font-awesome-icon v-show="!todo.done"
+                :icon="['fas', 'fa-pencil']"
+                class="btn"
+                @click="editTodo('todos', todo.id)"
+              />
+
+              <font-awesome-icon
+                :icon="['fas', 'fa-times']"
+                class="btn"
+                @click="deleteTodo('todos', todo.id)"
+              />
+            </div>
+          </section>
+        </section>
+
+      <!-- list of all hitlist items -->
+      <h3>Hit list</h3>
+      <section v-for="todo in hitList" :key="todo.id" class="todos">
+        <p class="todo">
+          <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("hitList", todo.id)' :checked="todo.done"  false-value=false true-value=true />
+          <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
+        </p>
+        <p><button v-show="!todo.done" @click="removeFromHitList(todo.id)" class="hit-list">revert</button></p>
         <div class="action-btns">
-          <font-awesome-icon
+          <font-awesome-icon v-show="!todo.done"
             :icon="['fas', 'fa-pencil']"
             class="btn"
-            @click="editTodo(todo.id)"
+            @click="editTodo('hitList', todo.id)"
           />
+
           <font-awesome-icon
             :icon="['fas', 'fa-times']"
             class="btn"
-            @click="deleteTodo(todo.id)"
+            @click="deleteTodo('hitList', todo.id)"
           />
         </div>
       </section>
@@ -47,26 +76,27 @@
 
 <script>
 // import HelloWorld from './components/HelloWorld.vue'
-
+const { format } = require('date-fns')
 export default {
   name: "App",
   data() {
     return {
-      id: 3,
+      id: 2,
       todos: [
         {
           id: 1,
           title: "sample",
-        },
-        {
-          id: 2,
-          title: "test",
+          createdAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'),
+          updatedAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'),
+          done: false
         },
       ],
+      hitList: [],
       todoName: "",
       errorStatus: false,
       method: "add",
       itemIndex: 0,
+      listType: 'todos'
     };
   },
   methods: {
@@ -75,7 +105,7 @@ export default {
       event.preventDefault();
       this.method = "add";
       if (this.todoName) {
-        this.todos.push({ id: this.id, title: this.todoName });
+        this.todos.push({ id: this.id, title: this.todoName, createdAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'), updatedAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'), done: false });
         this.id += 1;
         this.todoName = "";
       } else {
@@ -84,33 +114,78 @@ export default {
       }
     },
     // delete a todo item
-    deleteTodo(id) {
+    deleteTodo(array, id) {
       this.itemIndex = id;
-      this.todos = this.todos.filter((todo) => todo.id !== id);
+      if (array === 'todos') {
+        this.todos = this.todos.filter((todo) => todo.id !== id);
+      } else if (array === 'hitList') {
+        this.hitList = this.hitList.filter((todo) => todo.id !== id);
+      }
     },
     // edit todo item
-    editTodo(id) {
+    editTodo(array, id) {
       this.itemIndex = id;
-      let todo = this.todos.find((todo) => todo.id === id);
-      document.querySelector('input').focus();
-      this.todoName = todo.title;
+      this.listType = array
+      if (array === 'todos') {
+        this.todoName = this.todos.find((todo) => todo.id === id).title;
+      } else if (array === 'hitList') {
+        this.todoName = this.hitList.find((todo) => todo.id === id).title;
+      }
+      document.querySelector('input[type="text"]').focus();
       this.method = "update";
+    },
+    // utitlity function to update both normal list and hit list
+    updateTitleAndTime(array, id) {
+      return array.map((todo) => {
+          if (todo.id === id) {
+            todo.title = this.todoName;
+            todo.updatedAt = format(Date.now(), 'yyyy-MM-dd-hh:mm:ss')
+          }
+          return todo;
+        })
     },
     // update todo item
     updateTodo(event) {
       event.preventDefault();
-      let index = this.itemIndex;
-      this.method = "update";
-      this.todos = this.todos.map((todo) => {
-        if (todo.id === index) {
-          todo.title = this.todoName;
-        }
-        return todo;
-      });
+      let id = this.itemIndex;
+      // this.method = "update";
+      let array = this.listType
+      if (array === 'todos') {
+        this.todos = this.updateTitleAndTime(this.todos, id)
+      } else if (array === 'hitList') {
+        this.hitList = this.updateTitleAndTime(this.hitList, id)
+      }
       this.todoName = "";
       this.method = "add";
-      this.itemIndex = 0;
     },
+    // utility method for hit list and other list checkbox
+    checkBoxArray(array, id) {
+      return array.map((todo) => {
+          if (todo.id === id) {
+            todo.done = !todo.done;
+          }
+          return todo;
+        });
+    },
+    // mark a todo as done
+    checkBoxTodo(array, id) {
+      if (array === 'todos') {
+        this.todos = this.checkBoxArray(this.todos, id)
+      } else if (array === 'hitList') {
+        this.hitList = this.checkBoxArray(this.hitList, id)
+      }
+    },
+    // add todo to hit list
+    addToHitList(id) {
+      let todo = this.todos.find((todoItem) => todoItem.id === id);
+      this.hitList.push(todo)
+      this.todos = this.todos.filter(todoItem => todoItem.id !== todo.id)
+    },
+    removeFromHitList(id) {
+      let todo = this.hitList.find((todoItem) => todoItem.id === id);
+      this.hitList = this.hitList.filter(todoItem => todoItem.id !== todo.id)
+      this.todos.push(todo)
+    }
   },
 };
 </script>
@@ -120,6 +195,12 @@ export default {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+.align-center {
+  text-align: center;
+}
+.error {
+  color: rgb(193, 15, 15);
 }
 /* #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
@@ -138,7 +219,9 @@ export default {
   --clr-blue-light: #307cc3;
   --clr-blue-lighter: #cdebff;
 }
-
+.mb-3 {
+  margin-bottom: 3rem;
+}
 body {
   font-family: "Montserrat", sans-serif;
 }
@@ -171,6 +254,10 @@ h2 {
   padding-inline: 0.5rem;
   font-size: 1rem;
   font-family: "Montserrat", sans-serif;
+}
+/* checkbox */
+.linethrough {
+  text-decoration: line-through;
 }
 
 /* plus icon for adding todo */
@@ -206,7 +293,18 @@ h2 {
   font-size: 1.1rem;
   color: var(--clr-blue-darker);
 }
-
+/* hit list button styling */
+.hit-list {
+  background: var(--clr-blue-light);
+  border: .5px solid var(--clr-blue-light);
+  border-radius: 4px;
+  padding: .2rem .4rem;
+  color: #fff;
+  cursor: pointer;
+}
+.hit-list:hover {
+  background-color: var(--clr-blue-darker);
+}
 /* edit and delete buttons styling */
 .action-btns {
   display: flex;
