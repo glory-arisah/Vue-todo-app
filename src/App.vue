@@ -1,11 +1,15 @@
 <template>
   <h2 class="align-center">Todo list</h2>
-  <p v-if="errorStatus" class="align-center error">Please input a value</p>
+  <!-- <p v-if="errorStatus" class="align-center error">Please input a value</p> -->
   <section class="main-section">
     <!-- input field to add a todo item -->
     <section class="input">
-      <form @submit="method === 'add' ? addTodo($event) : updateTodo($event)">
-        <input type="text" v-model="todoName" />
+      <form
+        @submit.prevent="
+          method === 'add' ? addTodo($event) : updateTodo($event)
+        "
+      >
+        <input type="text" v-model.trim="todoName" />
       </form>
       <p></p>
       <template v-if="method === 'add'">
@@ -24,88 +28,65 @@
       </template>
     </section>
     <section class="all-todos">
-        <!-- list of the remaining todos -->
-        <section class="mb-3">
-          <h3>List</h3>
-          <template v-if="todosCount > 0">
-            <section v-for="todo in todos" :key="todo.id" class="todos">
-              <p class="todo">
-                <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("todos", todo.id)' :checked="todo.done"  false-value=false true-value=true />
-                <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
-              </p>
-              <p><button v-show="!todo.done" @click="addToHitList(todo.id)" class="hit-list">hitlist</button></p>
-              <div class="action-btns">
-                <font-awesome-icon v-show="!todo.done"
-                  :icon="['fas', 'fa-pencil']"
-                  class="btn"
-                  @click="editTodo('todos', todo.id)"
-                />
-
-                <font-awesome-icon
-                  :icon="['fas', 'fa-times']"
-                  class="btn"
-                  @click="deleteTodo('todos', todo.id)"
-                />
-              </div>
-            </section>
-          </template>
-          <template v-else><p>No task(s) -- type in a value to add a todo now!!</p></template>
-        </section>
-
-      <!-- list of all hitlist items -->
+      <!-- list of the remaining todos -->
+      <List
+        @delete-todo-ev="deleteTodo"
+        @edit-todo-ev="editTodo"
+        :array="[...todos]"
+        array-type="todos"
+        @add-or-revert-hitlist="addToHitList"
+        @checkbox-action="checkBoxTodo"
+      />
+      <!-- list of
+         all hitlist items -->
       <div>
-        <h3>Hit list</h3>
-        <template v-if="hitListCount > 0">
-          <section v-for="todo in hitList" :key="todo.id" class="todos">
-            <p class="todo">
-              <input type="checkbox" style="margin-right:0.3rem;" @change='checkBoxTodo("hitList", todo.id)' :checked="todo.done"  false-value=false true-value=true />
-              <span :class="todo.done && 'linethrough'">{{ todo.title }}</span>
-            </p>
-            <p><button v-show="!todo.done" @click="removeFromHitList(todo.id)" class="hit-list">revert</button></p>
-            <div class="action-btns">
-              <font-awesome-icon v-show="!todo.done"
-                :icon="['fas', 'fa-pencil']"
-                class="btn"
-                @click="editTodo('hitList', todo.id)"
-              />
-
-              <font-awesome-icon
-                :icon="['fas', 'fa-times']"
-                class="btn"
-                @click="deleteTodo('hitList', todo.id)"
-              />
-            </div>
-          </section>
-        </template>
-        <template v-else><p>No hit list task</p></template>
+        <List
+          @delete-todo-ev="deleteTodo"
+          @edit-todo-ev="editTodo"
+          :array="[...hitList]"
+          array-type="hitList"
+          @add-or-revert-hitlist="removeFromHitList"
+          @checkbox-action="checkBoxTodo"
+        />
       </div>
     </section>
   </section>
+
+  <!-- try out form -->
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
-const { format } = require('date-fns')
+import List from "./components/List.vue";
+
 export default {
   name: "App",
   data() {
     return {
-      id: 2,
+      counter: 0,
+      id: 4,
       todos: [
         {
           id: 1,
           title: "sample",
-          createdAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'),
-          updatedAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'),
-          done: false
+          done: false,
+        },
+        {
+          id: 2,
+          title: "sample2",
+          done: false,
         },
       ],
-      hitList: [],
+      hitList: [
+        {
+          id: 3,
+          title: "sample hitlist",
+          done: false,
+        },
+      ],
       todoName: "",
-      errorStatus: false,
       method: "add",
-      itemIndex: 0,
-      listType: 'todos'
+      listType: "",
+      editId: 0,
     };
   },
   methods: {
@@ -114,7 +95,8 @@ export default {
       event.preventDefault();
       this.method = "add";
       if (this.todoName) {
-        this.todos.push({ id: this.id, title: this.todoName, createdAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'), updatedAt: format(Date.now(), 'yyyy-MM-dd-hh:mm:ss'), done: false });
+        const newTodo = { id: this.id, title: this.todoName, done: false }
+        this.todos = [...this.todos, newTodo];
         this.id += 1;
         this.todoName = "";
       } else {
@@ -122,88 +104,86 @@ export default {
         setTimeout(() => (this.errorStatus = false), 3000);
       }
     },
-    // delete a todo item
-    deleteTodo(array, id) {
-      this.itemIndex = id;
-      if (array === 'todos') {
-        this.todos = this.todos.filter((todo) => todo.id !== id);
-      } else if (array === 'hitList') {
-        this.hitList = this.hitList.filter((todo) => todo.id !== id);
-      }
-    },
-    // edit todo item
-    editTodo(array, id) {
-      this.itemIndex = id;
-      this.listType = array
-      if (array === 'todos') {
-        this.todoName = this.todos.find((todo) => todo.id === id).title;
-      } else if (array === 'hitList') {
-        this.todoName = this.hitList.find((todo) => todo.id === id).title;
-      }
+    // set the input text box value to the todo text we want to edit
+    editTodo(arrayType, todo) {
+      [this.todoName, this.editId, this.listType] =
+      [todo.title, todo.id, arrayType];
       document.querySelector('input[type="text"]').focus();
       this.method = "update";
     },
-    // utitlity function to update both normal list and hit list
-    updateTitleAndTime(array, id) {
+    // update a list type task
+    updateListType(array, id) {
       return array.map((todo) => {
-          if (todo.id === id) {
-            todo.title = this.todoName;
-            todo.updatedAt = format(Date.now(), 'yyyy-MM-dd-hh:mm:ss')
-          }
-          return todo;
-        })
+        if (todo.id === id) todo.title = this.todoName
+        return todo;
+      });
     },
     // update todo item
     updateTodo(event) {
       event.preventDefault();
-      let id = this.itemIndex;
-      // this.method = "update";
-      let array = this.listType
-      if (array === 'todos') {
-        this.todos = this.updateTitleAndTime(this.todos, id)
-      } else if (array === 'hitList') {
-        this.hitList = this.updateTitleAndTime(this.hitList, id)
+      if (this.listType === "todos") {
+        this.todos = this.updateListType(this.todos, this.editId);
+      } else if (this.listType === "hitList") {
+        this.hitList = this.updateListType(this.hitList, this.editId);
       }
       this.todoName = "";
       this.method = "add";
     },
+    // delete a todo item
+    deleteTodo(array, removedTask) {
+      if (array === "todos") this.todos = [...removedTask];
+      else if (array === "hitList") this.hitList = [...removedTask];
+    },
     // utility method for hit list and other list checkbox
     checkBoxArray(array, id) {
       return array.map((todo) => {
-          if (todo.id === id) {
-            todo.done = !todo.done;
-          }
-          return todo;
-        });
+        if (todo.id === id) todo.done = !todo.done;
+        return todo;
+      });
     },
     // mark a todo as done
-    checkBoxTodo(array, id) {
-      if (array === 'todos') {
-        this.todos = this.checkBoxArray(this.todos, id)
-      } else if (array === 'hitList') {
-        this.hitList = this.checkBoxArray(this.hitList, id)
-      }
+    checkBoxTodo(arrayType, id) {
+      if (arrayType === "todos")
+        this.todos = this.checkBoxArray(this.todos, id);
+      else if (arrayType === "hitList")
+        this.hitList = this.checkBoxArray(this.hitList, id);
+    },
+    // utility find function
+    findById(array, id) {
+      return array.find((todo) => todo.id === id);
     },
     // add todo to hit list
     addToHitList(id) {
-      let todo = this.todos.find((todoItem) => todoItem.id === id);
-      this.hitList.push(todo)
-      this.todos = this.todos.filter(todoItem => todoItem.id !== todo.id)
+      const todo = this.findById(this.todos, id);
+      this.hitList = [...this.hitList, todo];
+      this.todos = this.todos.filter((todo) => todo.id !== id);
     },
+    // remove list item from hit list
     removeFromHitList(id) {
-      let todo = this.hitList.find((todoItem) => todoItem.id === id);
-      this.hitList = this.hitList.filter(todoItem => todoItem.id !== todo.id)
-      this.todos.push(todo)
-    }
+      const todo = this.findById(this.hitList, id);
+      this.todos = [...this.todos, todo];
+      this.hitList = this.hitList.filter((todo) => todo.id !== id);
+    },
   },
   computed: {
     hitListCount() {
-      return this.hitList.length
+      return this.hitList.length;
     },
     todosCount() {
-      return this.todos.length
-    }
-  }
+      return this.todos.length;
+    },
+  },
+  components: {
+    List,
+  },
+  provide() {
+    return {
+      addToHitList: this.addToHitList,
+      checkBoxTodo: this.checkBoxTodo,
+      editTodo: this.editTodo,
+      deleteTodo: this.deleteTodo,
+    };
+  },
 };
 </script>
 
@@ -279,7 +259,7 @@ h2 {
 
 /* plus icon for adding todo */
 .plus-icon {
-  padding-block: .85rem;
+  padding-block: 0.85rem;
   background-color: var(--clr-blue-light);
   color: white;
   width: 100%;
@@ -287,7 +267,7 @@ h2 {
 }
 .plus-icon:hover {
   border: 1px solid var(--clr-blue-darker);
-  background-color: var(--clr-blue-dark);
+  /* background-color: var(--clr-blue-dark); */
 }
 
 /* todo list styling */
@@ -311,9 +291,9 @@ h2 {
 /* hit list button styling */
 .hit-list {
   background: var(--clr-blue-light);
-  border: .5px solid var(--clr-blue-light);
+  border: 0.5px solid var(--clr-blue-light);
   border-radius: 4px;
-  padding: .2rem .4rem;
+  padding: 0.2rem 0.4rem;
   color: #fff;
   cursor: pointer;
 }
