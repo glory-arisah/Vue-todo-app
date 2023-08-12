@@ -1,28 +1,46 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <the-navigation />
+    <main>
+      <router-view
+        :formSubmissionError="formSubmissionError"
+        @submissionErrors="handleFormErrors"
+      />
+    </main>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import TheNavigation from "./components/TheNavigation.vue";
+import { RouterView } from "vue-router";
 
 export default {
-  name: 'App',
+  name: "App",
+  data() {
+    return {
+      formSubmissionError: false,
+    };
+  },
   components: {
-    HelloWorld
-  }
-}
+    TheNavigation,
+    RouterView,
+  },
+  methods: {
+    handleFormErrors(value) {
+      this.formSubmissionError = value;
+    },
+  },
+};
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+<style lang="scss">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+main {
+  width: 80%;
+  margin: 3rem auto 0 auto;
 }
 </style>
