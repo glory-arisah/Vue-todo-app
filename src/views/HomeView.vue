@@ -20,7 +20,7 @@
       </button>
     </section>
     <section>
-      <select v-model="filter">
+      <select data-todo-filter v-model="filter">
         <option :value="null">All</option>
         <option :value="true">Completed</option>
         <option :value="false">Not Completed</option>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <the-prompt
-      v-if="showPrompt === true"
+      v-if="showPrompt.value === true"
       @response="(val) => setResponse(val)"
     />
     <span class="delete-message" v-show="response === 'yes'"
@@ -13,12 +13,18 @@
           v-for="todo in displayedRecord"
           :key="todo.id"
           :draggable="true"
+          data-todo-item
         >
           <p>
             <input
               type="checkbox"
               :checked="todo.completed"
-              @change="handleCompletion(todo.id, $event.target.checked)"
+              @change="
+                handleCompletion(
+                  todo.id,
+                  ($event.target as HTMLInputElement).checked
+                )
+              "
             /><span>{{ todo.todo }}</span>
           </p>
           <div class="action-buttons">
@@ -33,7 +39,9 @@
       </template>
     </section>
     <section class="page-buttons">
-      <span @click="setPage(page - 1)" :class="{ inactive: page === 1 }"
+      <span
+        @click="setPage(page.value - 1)"
+        :class="{ inactive: page.value === 1 }"
         >&lt;</span
       >
       <button
@@ -45,25 +53,32 @@
         {{ pageNumber }}
       </button>
       <span
-        @click="setPage(page + 1)"
-        :class="{ inactive: page === Math.ceil(todoList.length / perPage) }"
+        @click="setPage(page.value + 1)"
+        :class="{
+          inactive: page.value === Math.ceil(todoList.length / perPage.value),
+        }"
         >&gt;</span
       >
     </section>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import axios from "axios";
-import { ref, computed, watch } from "vue";
+import Vue, { ref, computed, watch } from "vue";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { faTimes, faPencil } from "@fortawesome/free-solid-svg-icons";
 import ThePrompt from "./ThePrompt.vue";
 
 library.add(faTimes, faPencil);
-export default {
+
+export default Vue.extend({
   components: {
     ThePrompt,
+  },
+  props: {
+    todoList: Array,
+    filter: String,
   },
   setup(props) {
     // PAGINATION
@@ -76,7 +91,7 @@ export default {
       return props.todoList.slice(startId, endId);
     });
 
-    function setPage(val) {
+    function setPage(val: number) {
       page.value = val;
     }
 
@@ -162,8 +177,7 @@ export default {
       handleCompletion,
     };
   },
-  props: ["todoList", "filter"],
-};
+});
 </script>
 
 <style lang="scss" scoped>
