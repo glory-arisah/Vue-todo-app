@@ -1,47 +1,56 @@
 <template>
   <div>
     <the-prompt
-      v-if="showPrompt.value === true"
+      v-if="showPrompt === true"
       @response="(val) => setResponse(val)"
     />
     <span class="delete-message" v-show="response === 'yes'"
       >Successfully deleted</span
     >
-    <section class="todo-list">
-      <template v-if="todoList.length">
-        <article
-          v-for="todo in displayedRecord"
-          :key="todo.id"
-          :draggable="true"
-          data-todo-item
-        >
-          <p>
+    <the-loader v-show="!todoList.length" />
+    <section class="filter" v-show="todoList.length">
+      <p>Filters</p>
+      <article class="complete-filter">
+        <select data-todo-filter v-model="filter">
+          <!-- 0 represents all, 1 reps completed, 2 reps not completed -->
+          <option selected :value="0">All</option>
+          <option :value="1">Completed</option>
+          <option :value="2">Not Completed</option>
+        </select>
+      </article>
+      <article class="perpage-filter">
+        <select v-model="perPage">
+          <option selected :value="6">6</option>
+          <option :value="10">10</option>
+          <option :value="15">15</option>
+        </select>
+      </article>
+    </section>
+    <section class="todo-list" v-if="todoList.length">
+      <article
+        v-for="todo in displayedRecord"
+        :key="todo.id"
+        :draggable="true"
+        data-todo-item
+      >
+        <p>
+          <label class="form-control">
             <input
               type="checkbox"
               :checked="todo.completed"
-              @change="
-                handleCompletion(
-                  todo.id,
-                  ($event.target as HTMLInputElement).checked
-                )
-              "
-            /><span>{{ todo.todo }}</span>
-          </p>
-          <div class="action-buttons">
-            <button class="edit" @click="editTodo(todo.id)">
-              <font-awesome-icon icon="pencil" />
-            </button>
-            <button class="del" @click="confirmDelete(todo.id)">
-              <font-awesome-icon icon="times" />
-            </button>
-          </div>
-        </article>
-      </template>
+              @change="handleCompletion(todo.id, $event.target.checked)"
+            />
+          </label>
+          <span>{{ todo.todo }}</span>
+        </p>
+        <div class="action-buttons">
+          <button class="edit" @click="editTodo(todo.id)">&#9998;</button>
+          <button class="del" @click="confirmDelete(todo.id)">&times;</button>
+        </div>
+      </article>
     </section>
-    <section class="page-buttons">
-      <span
-        @click="setPage(page.value - 1)"
-        :class="{ inactive: page.value === 1 }"
+    <section class="page-buttons" v-show="todoList.length">
+      <span @click="setPage(page - 1)" :class="{ inactive: page === 1 }"
         >&lt;</span
       >
       <button
@@ -53,9 +62,9 @@
         {{ pageNumber }}
       </button>
       <span
-        @click="setPage(page.value + 1)"
+        @click="setPage(page + 1)"
         :class="{
-          inactive: page.value === Math.ceil(todoList.length / perPage.value),
+          inactive: page === Math.ceil(todoList.length / perPage),
         }"
         >&gt;</span
       >
@@ -63,40 +72,50 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import axios from "axios";
-import Vue, { ref, computed, watch } from "vue";
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { faTimes, faPencil } from "@fortawesome/free-solid-svg-icons";
+import { ref, computed, watch } from "vue";
 import ThePrompt from "./ThePrompt.vue";
+import TheLoader from "./TheLoader.vue";
 
-library.add(faTimes, faPencil);
-
-export default Vue.extend({
+export default {
   components: {
     ThePrompt,
+    TheLoader,
   },
   props: {
-    todoList: Array,
-    filter: String,
+    todoListCopy: Array,
   },
-  setup(props) {
+  setup(props, { emit }) {
+    // FETCH TODO LIST ON CREATE
+    const todoList = computed(() => {
+      return props.todoListCopy;
+    });
+
     // PAGINATION
     const page = ref(1);
-    const perPage = ref(10);
+    const perPage = ref(6);
+    const filter = ref(0);
+
+    const filteredTodos = computed(() => {
+      if (!filter.value) return todoList.value;
+      else if (filter.value === 1)
+        return todoList.value.filter((todo) => todo.completed);
+      else return todoList.value.filter((todo) => !todo.completed);
+    });
 
     const displayedRecord = computed(() => {
       const startId = perPage.value * (page.value - 1);
       const endId = startId + perPage.value;
-      return props.todoList.slice(startId, endId);
+      return filteredTodos.value.slice(startId, endId);
     });
 
-    function setPage(val: number) {
+    function setPage(val) {
       page.value = val;
     }
 
     const totalPages = computed(() => {
-      return Math.ceil(props.todoList.length / perPage.value);
+      return Math.ceil(filteredTodos.value.length / perPage.value);
     });
 
     // WATCH FOR MINIMUM AND MAXIMUM PAGE NUMBER
@@ -107,7 +126,7 @@ export default Vue.extend({
 
     // WATCH FOR CHANGE IN COMPLETED/UNCOMPLETED FILTER
     watch(
-      () => props.filter,
+      [filter, perPage],
       (newVal, oldVal) => {
         if (newVal !== oldVal) {
           page.value = 1;
@@ -145,10 +164,7 @@ export default Vue.extend({
 
     function editTodo(id) {
       activeEditId.value = id;
-      this.$router.push({
-        name: "form",
-        params: { formMode: "update", todoId: activeEditId.value },
-      });
+      emit("setFormModeAndId", { editId: id, mode: "update" });
     }
 
     async function handleCompletion(id, value) {
@@ -163,9 +179,12 @@ export default Vue.extend({
     }
 
     return {
+      filteredTodos,
       page,
       perPage,
       totalPages,
+      todoList,
+      filter,
       response,
       showPrompt,
       displayedRecord,
@@ -177,7 +196,7 @@ export default Vue.extend({
       handleCompletion,
     };
   },
-});
+};
 </script>
 
 <style lang="scss" scoped>
@@ -188,42 +207,82 @@ $md: 40em;
   top: 15%;
   color: #860404;
 }
+
+.filter {
+  display: flex;
+  align-items: center;
+  // justify-content: s;
+  margin-top: 1rem;
+  p {
+    margin-right: 0.5rem;
+    font-size: 1.05rem;
+  }
+  article {
+    select {
+      font-size: 0.9rem;
+      background-color: #fff !important;
+      padding: 0.3rem 0.7rem;
+      border-radius: 5px;
+      border: 1px solid #b4b4b4;
+    }
+  }
+  .complete-filter {
+    margin-right: 0.8rem;
+  }
+}
 .todo-list {
   margin-top: 2rem;
   article {
-    margin-bottom: 1rem;
-    input {
-      margin-right: 0.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 2px 3px 10px #969595;
+    padding: 0.8rem;
+    border-radius: 10px;
+    cursor: grab;
+
+    span {
+      margin-left: 0.5rem;
     }
-    button {
-      padding: 0.1rem 0.5rem;
-      border-radius: 5px;
-      color: #fff;
-      transition: transform 300ms;
-      &:first-child {
-        background-color: #059c5a;
-        border: 0.5px solid #06b96b;
-        &:hover {
-          color: #04b47c;
+    .action-buttons {
+      display: flex;
+      margin-top: 0.5rem;
+      justify-content: flex-end;
+      button {
+        border-radius: 50%;
+        width: 23px;
+        height: 23px;
+        line-height: 16px;
+        background-color: transparent;
+        transition: color 200ms, background-color 200ms;
+        &.edit {
+          border: 1px solid #06a15e;
+          color: #059c5a;
+          font-size: 17px;
+          &:hover {
+            color: #fff;
+            background-color: #059c5a;
+            transition: color 200ms, background-color 200ms;
+          }
         }
-      }
-      &:nth-of-type(2) {
-        margin-left: 0.5rem;
-        border: 1px solid #860404;
-        background-color: #c80404;
-        color: #fff;
-        &:hover {
-          border: 1px solid rgb(181, 14, 14);
-          color: #c80404;
+        &.del {
+          margin-left: 0.5rem;
+          border: 1px solid #e61616;
+          color: #e61616;
+          text-shadow: 0 0 1.4px #e61616;
+          font: {
+            size: 18px;
+          }
+          &:hover {
+            // border: 1px solid rgb(181, 14, 14);
+            color: #fff;
+            background-color: #e61616;
+            transition: color 200ms, background-color 200ms;
+          }
         }
-      }
-      &:active {
-        transform: translateY(3px);
-        transition: transform 300ms;
-      }
-      &:hover {
-        background-color: #efefef;
-        cursor: pointer;
+        &:active {
+        }
+        &:hover {
+          cursor: pointer;
+        }
       }
     }
   }
@@ -260,12 +319,12 @@ $md: 40em;
   }
 }
 // MEDIUM
-@media (min-width: $md) {
-  .todo-list {
-    article {
-      display: flex;
-      justify-content: space-between;
-    }
-  }
-}
+// @media (min-width: $md) {
+//   .todo-list {
+//     article {
+//       display: flex;
+//       justify-content: space-between;
+//     }
+//   }
+// }
 </style>

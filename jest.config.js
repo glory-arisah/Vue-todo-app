@@ -3,16 +3,8 @@ module.exports = {
   moduleNameMapper: {
     axios: "axios/dist/node/axios.cjs",
   },
-  // testMatch: ["**/tests/unit/*.spec.ts"],
+  // testMatch: ["**/__tests__/*.{j,t}s?(x)", "**/tests/unit/**/*.spec.ts?(x)"],
   collectCoverage: true,
-  collectCoverageFrom: ["src/**/*.{ts,js,vue}"],
-  coveragePathIgnorePatterns: [
-    "!src/main.ts",
-    "!src/router.ts",
-    "!src/plugins/*",
-    "!src/types/*",
-    "!src/model/*",
-    "!*.d.ts",
-  ],
-  // moduleFileExtensions: ["js", "ts", "vue"],
+  // collectCoverageFrom: ["src/**/*.{ts,js,vue}"],
+  moduleFileExtensions: ["js", "ts", "vue"],
 };

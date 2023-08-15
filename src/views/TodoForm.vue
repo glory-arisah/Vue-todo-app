@@ -1,52 +1,57 @@
 <template>
-  <div>
-    <h2>
-      {{ $route.params.formMode === "create" ? "Create Task" : "Update Task" }}
-    </h2>
-    <form
-      @submit.prevent="
-        handleSubmit();
-        $emit('submissionErrors', submissionError);
-      "
-    >
-      <div>
-        <label>Title</label>
-        <input type="text" v-model.trim="todoItem.todo" @input="checkError" />
-        <span class="word-count">{{ wordCount }}</span>
+  <section>
+    <div class="modal">
+      <h2>
+        {{ formMode === "create" ? "Add a new Todo" : "Update your Todo" }}
+      </h2>
+      <div class="close--btn">
+        <span @click="$emit('closeModal', true)">&times;</span>
       </div>
-      <span class="error-message" v-show="isError"
-        >* This field cannot be blank</span
+      <form
+        @submit.prevent="
+          handleSubmit();
+
+          $emit('submissionErrors', submissionError);
+        "
       >
-      <div>
-        <input
-          type="submit"
-          :value="
-            $route.params.formMode === 'create' ? 'Create Task' : 'Update Task'
-          "
-        />
-      </div>
-    </form>
-  </div>
+        <div>
+          <label>Title</label>
+          <input type="text" v-model.trim="todoItem.todo" @input="checkError" />
+          <span class="word-count">{{ wordCount }}</span>
+        </div>
+        <span class="error-message" v-show="isError"
+          >* This field cannot be blank</span
+        >
+        <div>
+          <input
+            type="submit"
+            :value="formMode === 'create' ? 'Create' : 'Update'"
+          />
+        </div>
+      </form>
+    </div>
+    <div class="modal-overlay"></div>
+  </section>
 </template>
 
 <script>
 import axios from "axios";
 import { computed, reactive, ref, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router/composables";
-// import { useRouter, useRoute } from "vue-router/types";
 
 export default {
-  setup() {
+  props: {
+    formMode: String,
+    activeEditId: Number,
+  },
+  setup(props, { emit }) {
     const todoItem = reactive({
       userId: 5,
       todo: "",
     });
     const isError = ref(true);
-    const route = useRoute();
-    const router = useRouter();
-    const formMode = ref(route.params.formMode);
-    const submissionError = ref(false);
 
+    // const editTodoName = computed(() => )
+    const submissionError = ref(false);
     const wordCount = computed(() => {
       return todoItem.todo.trim().length;
     });
@@ -64,6 +69,9 @@ export default {
     // CREATE AND UPDATE METHODS
     async function handleNewTodo() {
       try {
+        emit("createTodo", {
+          title: todoItem.todo,
+        });
         await axios.post("https://dummyjson.com/todos/add", {
           userId: 5,
           todo: todoItem.todo,
@@ -71,13 +79,17 @@ export default {
         });
       } catch (error) {
         console.log(error);
+        // emit("newTodo", { close: false });
       }
     }
 
     async function handleEditedTodo() {
       try {
-        const todoId = route.params.todoId;
-        axios.put(`https://dummyjson.com/todos/${todoId}`, {
+        emit("updateTodo", {
+          title: todoItem.todo,
+          id: todoItem.id,
+        });
+        axios.put(`https://dummyjson.com/todos/${props.activeEditId}`, {
           userId: 5,
           todo: todoItem.todo,
           completed: todoItem.completed,
@@ -91,14 +103,12 @@ export default {
       // validate todo field
       if (todoItem.todo.trim().length) {
         try {
-          if (formMode.value === "create") await handleNewTodo();
-          else if (formMode.value === "update") await handleEditedTodo();
+          if (props.formMode === "create") await handleNewTodo();
+          else if (props.formMode === "update") await handleEditedTodo();
         } catch (error) {
           submissionError.value = true;
         }
         resetInputFields();
-
-        router.push({ name: "Home" });
       } else {
         isError.value = true;
         setTimeout(() => {
@@ -108,11 +118,12 @@ export default {
     }
 
     onMounted(() => {
-      if (route.params.formMode === "update") {
+      if (props.formMode === "update") {
         const currentTodo = JSON.parse(localStorage.getItem("todoList")).find(
-          (todo) => todo.id === parseInt(route.params.todoId)
+          (todo) => parseInt(todo.id) === props.activeEditId
         );
         todoItem.todo = currentTodo.todo;
+        todoItem.id = currentTodo.id;
         checkError();
       }
     });
@@ -120,7 +131,6 @@ export default {
     return {
       todoItem,
       isError,
-      formMode,
       submissionError,
       wordCount,
       checkError,
@@ -141,24 +151,28 @@ form {
   label {
     display: block;
     margin-top: 1rem;
+    font-weight: bold;
   }
   input[type="text"] {
-    margin: 0.3rem 0.8rem 1rem 0;
+    margin: 0.3rem 0.8rem 0.4rem 0;
     width: 70%;
-    padding: 0.3rem;
+    padding: 0.3rem 0.5rem;
     border-radius: 5px;
     border: 1px solid gray;
   }
   input[type="submit"] {
     padding: 0.3rem 0.6rem;
+    margin-top: 1rem;
     border-radius: 5px;
+    font-size: 0.95rem;
     border: 1px solid #0dafd3;
-    background: linear-gradient(to top right, #147df5, #0dafd3, #1aaf8a);
-    color: #eee;
-    &:hover {
-      color: #fff;
-      cursor: pointer;
-    }
+    // background: linear-gradient(to top right, #147df5, #0dafd3, #1aaf8a);
+    color: #fff;
+    background-color: #26a469;
+    // &:hover {
+    //   color: #fff;
+    //   cursor: pointer;
+    // }
   }
   .error-message {
     font-size: 0.8rem;

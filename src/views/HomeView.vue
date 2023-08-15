@@ -8,91 +8,133 @@
       <h3>Tasks</h3>
       <button
         @click="
-          $router.push({
-            name: 'form',
-            params: {
-              formMode: 'create',
-            },
-          })
+          showModal = true;
+          formMode = 'create';
         "
       >
         Add task
       </button>
     </section>
-    <section>
-      <select data-todo-filter v-model="filter">
-        <option :value="null">All</option>
-        <option :value="true">Completed</option>
-        <option :value="false">Not Completed</option>
-      </select>
-    </section>
-    <the-pagination :filter="filter" :todoList="[...filteredTodos]" />
+    <!-- CREATE TODO MODAL -->
+    <template v-if="showModal">
+      <todo-form
+        :lastTodoId="lastTodoId"
+        :activeEditId="activeEditId"
+        @createTodo="handleNewTodo"
+        @updateTodo="handleEditTodo"
+        @closeModal="(value) => (showModal = !value)"
+        :formMode="formMode"
+      >
+      </todo-form>
+    </template>
+
+    <the-pagination
+      @setFormModeAndId="handleFormModeAndId"
+      :todo-list-copy="todoListCopy"
+    />
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import ThePagination from "@/components/ThePagination.vue";
-import { ref, computed } from "vue";
+import TodoForm from "./TodoForm.vue";
+import { ref } from "vue";
 
 export default {
-  setup(props) {
-    const todoTitle = ref("");
-    const activeEditId = ref(null);
-    const formMode = ref("add");
-    const response = ref(null);
-
-    // FILTER TODOLIST BASED ON COMPLETION
-    const todoList = ref([{}]);
-    const filter = ref(null);
-
-    const filteredTodos = computed(() => {
-      if (filter.value === null) return todoList.value;
-      else
-        return todoList.value.filter((todo) => todo.completed === filter.value);
-    });
+  props: {
+    formSubmissionError: Boolean,
+  },
+  setup() {
+    const todoList = ref([]);
+    const lastTodoId = ref(null);
+    const todoListCopy = ref([]);
 
     // ONCREATE FETCH TODO LIST FROM LOCAL STORAGE IF AVAILABLE
     async function getTodoList() {
-      if (localStorage.getItem("todoList")) {
-        todoList.value = JSON.parse(localStorage.getItem("todoList"));
+      if (localStorage.getItem("todoList") !== null) {
+        todoListCopy.value = JSON.parse(localStorage.getItem("todoList"));
+        lastTodoId.value = parseInt(
+          JSON.parse(localStorage.getItem("lastTodoId"))
+        );
       } else {
         const url = "https://dummyjson.com/todos";
-        const { data } = await axios.get(url);
-        todoList.value = data.todos;
-        localStorage.setItem("todoList", JSON.stringify(todoList.value));
+        try {
+          const { data } = await axios.get(url);
+          todoList.value = data.todos;
+          todoListCopy.value = data.todos.filter(
+            ({ id, todo, userId, completed }) => ({
+              id,
+              todo,
+              userId,
+              completed,
+            })
+          );
+          lastTodoId.value = todoListCopy.value[todoList.value.length - 1].id;
+          localStorage.setItem("todoList", JSON.stringify(data.todos));
+          localStorage.setItem("lastTodoId", JSON.stringify(lastTodoId.value));
+        } catch (error) {
+          console.error(error);
+        }
       }
     }
+
     getTodoList();
 
-    const todoId = computed(() => {
-      if (todoList.value.length)
-        return todoList.value[todoList.value.length].id;
-      else return null;
-    });
+    const activeEditId = ref(null);
+    const formMode = ref("create");
+    const response = ref("");
+    const showModal = ref(false);
+
+    function handleNewTodo({ title }) {
+      if (!title) return;
+
+      todoListCopy.value = [
+        {
+          id: lastTodoId.value++,
+          todo: title,
+          completed: false,
+          userId: 5,
+        },
+        ...todoListCopy.value,
+      ];
+      localStorage.setItem("todoList", JSON.stringify(todoListCopy.value));
+      showModal.value = false;
+    }
+
+    function handleEditTodo({ title, id }) {
+      if (!title) return;
+
+      todoListCopy.value = todoListCopy.value.map((todoItem) => {
+        if (todoItem.id === id) todoItem.todo = title;
+        return todoItem;
+      });
+      localStorage.setItem("todoList", JSON.stringify(todoListCopy.value));
+      showModal.value = false;
+    }
+
+    function handleFormModeAndId({ editId, mode }) {
+      activeEditId.value = editId;
+      formMode.value = mode;
+      showModal.value = true;
+    }
 
     return {
-      todoTitle,
-      todoList,
+      todoListCopy,
       activeEditId,
-      todoId,
+      showModal,
       formMode,
       response,
-      filter,
-      filteredTodos,
-      formSubmissionError: props.formSubmissionError,
+      lastTodoId,
+      handleNewTodo,
+      handleEditTodo,
+      handleFormModeAndId,
     };
   },
   async created() {},
   components: {
     ThePagination,
-  },
-  computed: {
-    // filteredTodos() {
-    //   if (this.filter === null) return this.todoList;
-    //   else
-    //     return this.todoList.filter((todo) => todo.completed === this.filter);
-    // },
+    TodoForm,
   },
 };
 </script>
