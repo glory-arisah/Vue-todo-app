@@ -30,6 +30,7 @@
 
     <the-pagination
       @setFormModeAndId="handleFormModeAndId"
+      @sortedList="handleSortedList"
       :todo-list-copy="todoListCopy"
     />
   </div>
@@ -119,6 +120,10 @@ export default {
       showModal.value = true;
     }
 
+    function handleSortedList(sortedList) {
+      todoListCopy.value = sortedList
+    }
+
     return {
       todoListCopy,
       activeEditId,
@@ -129,6 +134,7 @@ export default {
       handleNewTodo,
       handleEditTodo,
       handleFormModeAndId,
+      handleSortedList
     };
   },
   async created() {},
@@ -155,7 +161,7 @@ export default {
       padding: 0.5rem 1rem;
       border: 1px solid #0ab666;
       border-radius: 5px;
-      background: linear-gradient(to top right, #147df5, #0dafd3, #1aaf8a);
+      background: #1aaf8a;
       color: #fff;
       transition: color 200ms, background-color 200ms;
       &:hover {
