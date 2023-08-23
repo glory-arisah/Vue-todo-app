@@ -25,9 +25,12 @@
           <option :value="15">15</option>
         </select>
       </article>
+      <article>Total count: {{ todoList.length }}</article>
     </section>
+    <!-- TODO LIST SECTION -->
     <section class="todo-list" v-if="todoList.length">
-      <article
+      <draggable :list="displayedRecord" :move="handleDraggable" @end="handleDragEnd">
+        <article
         v-for="todo in displayedRecord"
         :key="todo.id"
         :draggable="true"
@@ -48,7 +51,9 @@
           <button class="del" @click="confirmDelete(todo.id)">&times;</button>
         </div>
       </article>
+      </draggable>
     </section>
+    <!-- PAGE NAVIGATION BUTTONS AND ARROW ICONS -->
     <section class="page-buttons" v-show="todoList.length">
       <span @click="setPage(page - 1)" :class="{ inactive: page === 1 }"
         >&lt;</span
@@ -74,6 +79,7 @@
 
 <script>
 import axios from "axios";
+import draggable from 'vuedraggable'
 import { ref, computed, watch } from "vue";
 import ThePrompt from "./ThePrompt.vue";
 import TheLoader from "./TheLoader.vue";
@@ -82,6 +88,7 @@ export default {
   components: {
     ThePrompt,
     TheLoader,
+    draggable
   },
   props: {
     todoListCopy: Array,
@@ -96,6 +103,8 @@ export default {
     const page = ref(1);
     const perPage = ref(6);
     const filter = ref(0);
+    const fromId = ref(null)
+    const toId = ref(null)
 
     const filteredTodos = computed(() => {
       if (!filter.value) return todoList.value;
@@ -109,6 +118,22 @@ export default {
       const endId = startId + perPage.value;
       return filteredTodos.value.slice(startId, endId);
     });
+
+    function handleDraggable(event) {
+      fromId.value = event.draggedContext.element.id
+      toId.value = event.relatedContext.element.id
+    }
+
+    function handleDragEnd() {
+      const fromTodoId = todoList.value.findIndex(todo => todo.id === fromId.value)
+      const toTodoId = todoList.value.findIndex(todo => todo.id === toId.value)
+
+      if (fromTodoId === toTodoId) return
+
+      const sortedList = todoList.value.slice()
+      sortedList.splice(toTodoId, 0, sortedList.splice(fromTodoId, 1)[0])
+      emit('sortedList', sortedList)
+    }
 
     function setPage(val) {
       page.value = val;
@@ -183,6 +208,8 @@ export default {
       page,
       perPage,
       totalPages,
+      handleDraggable,
+      handleDragEnd,
       todoList,
       filter,
       response,
@@ -200,6 +227,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import url('https://fonts.googleapis.com/css2?family=Caladea&display=swap');
 $md: 40em;
 // MOBILE
 .delete-message {
@@ -240,6 +268,10 @@ $md: 40em;
     cursor: grab;
 
     span {
+      font: {
+        family: 'Caladea', serif;
+        size: 1.05rem
+      }
       margin-left: 0.5rem;
     }
     .action-buttons {

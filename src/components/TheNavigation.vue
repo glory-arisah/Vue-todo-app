@@ -10,12 +10,16 @@
 
 <style lang="scss" scoped>
 nav {
-  background: linear-gradient(to top right, #147df5, #0dafd3, #1aaf8a);
+  border: {
+    bottom-left-radius: 5px;
+    bottom-right-radius: 5px;
+  }
+  background: #036d44;
   padding-block: 1.3rem;
   h3 {
     cursor: pointer;
     color: #fff;
-    font-weight: light;
+    font-weight: lighter;
     margin-left: 1.5rem;
   }
 }
