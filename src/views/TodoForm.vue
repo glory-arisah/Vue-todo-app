@@ -169,14 +169,10 @@ form {
     // background: linear-gradient(to top right, #147df5, #0dafd3, #1aaf8a);
     color: #fff;
     background-color: #26a469;
-    // &:hover {
-    //   color: #fff;
-    //   cursor: pointer;
-    // }
   }
   .error-message {
     font-size: 0.8rem;
-    color: rgb(169, 8, 8);
+    color: #a90808;
   }
 }
 </style>

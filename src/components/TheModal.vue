@@ -17,11 +17,16 @@
                   @keydown="handleFormSubmission"
                   @input="checkError"
                 />
-                <span class="word-count">{{ wordCount }}/{{ maxCharacters }}</span>
+                <span class="word-count" :style="{
+                  color: isInputLengthGreaterThanSixty || isInputBlank ? '#d40707' : '#06a15e'
+                }">{{ wordCount }}/{{ maxCharacters }}</span>
               </div>
               <div class="error-message--container">
-                <span v-if="isInputRequired && isError">
+                <span v-if="isInputBlank">
                   * This field cannot be blank
+                </span>
+                <span v-else-if="isInputLengthGreaterThanSixty">
+                  * Exceeded maximum characters
                 </span>
               </div>
             </div>
@@ -68,15 +73,22 @@ import TheLoader from './loader/TheLoader.vue';
     },
     computed: {
       wordCount() {
-        return this.modalValue.trim().length;
+        return this.modalValue.replace(/\s+/g, '').length;
       },
       isInputRequired() {
         return this.$props.options.inputValue !== null
+      },
+      isInputBlank() {
+        return this.isInputRequired && !this.modalValue.replace(/\s+/g, '').length
+      },
+      isInputLengthGreaterThanSixty() {
+        return this.isInputRequired && this.modalValue.replace(/\s+/g, '').length > 60
       }
     },
     components: {
       TheLoader
     },
+    emits: ['resolveModalAction'],
     methods: {
       resolveModalAction() {
         if (this.isInputRequired && this.isError) return
@@ -89,19 +101,24 @@ import TheLoader from './loader/TheLoader.vue';
         }
       },
       checkError() {
-      if (this.modalValue && this.modalValue.trim().length) this.isError = false;
-      else this.isError = true;
+      if (
+        (!this.modalValue && !this.modalValue.trim().length) ||
+        (this.modalValue && this.modalValue.trim().length > 60)
+      ) {
+        this.isError = true
+      }
+      else this.isError = false
       },
       handleEventSubmission(event) {
-        if (event.key === 'Enter') {
-          this.resolveModalAction()
-        }
-      }
+        this.$props.options.action === 'delete' && this.handleFormSubmission(event)
+      },
     },
     mounted() {
       this.$refs.input && this.$refs.input.focus()
-      window.addEventListener('keyup', (event) => this.handleEventSubmission(event))
       this.checkError()
+      window.addEventListener('keyup', (event) => {
+        this.handleEventSubmission(event)
+      })
     },
     destroyed() {
       window.removeEventListener('keyup', (event) => this.handleEventSubmission(event))

@@ -1,10 +1,5 @@
 <template>
   <div>
-    <!-- <the-prompt
-      v-if="showPrompt === true"
-      @response="(val) => setResponse(val)"
-    /> -->
-    <!-- <span class="delete-message" v-show="response === 'yes'">Successfully deleted</span> -->
     <the-loader v-show="!todoList && todoList.length" />
 
     <section class="filter" v-show="todoList.length">

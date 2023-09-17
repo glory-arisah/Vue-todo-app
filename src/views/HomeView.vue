@@ -1,18 +1,13 @@
 <template>
   <div class="container">
     <TheModalVue v-if="showModal"
-    :modalSubmissionState="modalSubmissionState"
-    :options="modalOptions"
-    @resolveModalAction="createTodo"
-    @close="showModal = false"
+      :modalSubmissionState="modalSubmissionState"
+      :options="modalOptions"
+      @resolveModalAction="createTodo"
+      @close="showModal = false"
     />
-    <!-- <the-alert
-      v-show="!formSubmissionError"
-    /> -->
+    <!-- CREATE TODO MODAL -->
     <section class="top-header">
-      <!-- FLEX THIS CONTAINER -->
-      <!-- // showModal = true;
-      // formMode = 'create'; -->
       <h3>Tasks</h3>
       <button
         @click="showCreateTodoModal"
@@ -20,10 +15,8 @@
         Add task
       </button>
     </section>
-    <!-- CREATE TODO MODAL -->
 
     <the-pagination
-      @setFormModeAndId="handleFormModeAndId"
       @sortedList="handleSortedList"
       @updateTodoList="updateTodoList"
       :todo-list-copy="todoListCopy"
@@ -37,9 +30,7 @@ import IBaseConfig from '@/service';
 import axios from "axios";
 import ThePagination from "@/components/ThePagination.vue";
 import TheModalVue from '@/components/TheModal.vue';
-// import TodoForm from "./TodoForm.vue";
-import Vue, { ref, reactive } from "vue";
-import Swal from 'sweetalert2';
+import  { ref, reactive } from "vue";
 
 export default {
   props: {
@@ -52,13 +43,10 @@ export default {
     const modalOptions = reactive({ action: '', header: '', inputValue: '', id: null })
     const modalSubmissionState = ref(false)
 
-    // ONCREATE FETCH TODO LIST FROM LOCAL STORAGE IF AVAILABLE
     async function getTodoList() {
       if (localStorage.getItem("todoList") !== null) {
         todoListCopy.value = JSON.parse(localStorage.getItem("todoList"));
-        lastTodoId.value = parseInt(
-          JSON.parse(localStorage.getItem("lastTodoId"))
-        );
+        lastTodoId.value = parseInt(JSON.parse(localStorage.getItem("lastTodoId")));
       } else {
         const url = "https://dummyjson.com/todos";
         try {
@@ -88,37 +76,6 @@ export default {
     const formMode = ref("create");
     const showModal = ref(false);
 
-    function showCreateModal() {
-      Vue.fire({
-        title: '<p>Create a new task</p>',
-        input: 'text',
-        showCancelButton: true,
-        confirmButtonText: 'Create',
-        showLoaderOnConfirm: true,
-        preConfirm: (text) => {
-          if (!text || !text.trim()) {
-            Swal.showValidationMessage('* This field cannot be blank')
-            return null
-          }
-        },
-        customClass: {
-          confirmButton: 'confirm--button',
-          denyButton: 'deny--button'
-        }
-      })
-      .then((result) => {
-        if (!result.value) return
-
-        handleNewTodo({ title: result.value })
-        Vue.fire({
-          icon: 'success',
-          timer: 1000,
-          titleText: 'Successfully created'
-        })
-      })
-      .catch(() => {throw new Error('an error occurred here')})
-    }
-
     function showCreateTodoModal() {
       showModal.value = true
       modalOptions.action = 'create'
@@ -145,46 +102,14 @@ export default {
 
     async function createTodo({ value, id }) {
       modalSubmissionState.value = true
+
       if (!value && !value.length) return
-      todoListCopy.value = [{ id, completed: false, todo: value, userId: 5 }, ...todoListCopy.value]
       await handleNewTodo(value, id)
+      todoListCopy.value = [{ id, completed: false, todo: value, userId: 5 }, ...todoListCopy.value]
       localStorage.setItem('todoList', JSON.stringify(todoListCopy.value))
 
       modalSubmissionState.value = false
       showModal.value = false
-    }
-
-    // function handleNewTodo({ title }) {
-    //   if (!title) return;
-
-    //   todoListCopy.value = [
-    //     {
-    //       id: lastTodoId.value++,
-    //       todo: title,
-    //       completed: false,
-    //       userId: 5,
-    //     },
-    //     ...todoListCopy.value,
-    //   ];
-    //   localStorage.setItem("todoList", JSON.stringify(todoListCopy.value));
-    //   showModal.value = false;
-    // }
-
-    function handleEditTodo({ title, id }) {
-      if (!title) return;
-
-      todoListCopy.value = todoListCopy.value.map((todoItem) => {
-        if (todoItem.id === id) todoItem.todo = title;
-        return todoItem;
-      });
-      localStorage.setItem("todoList", JSON.stringify(todoListCopy.value));
-      showModal.value = false;
-    }
-
-    function handleFormModeAndId({ editId, mode }) {
-      activeEditId.value = editId;
-      formMode.value = mode;
-      showModal.value = true;
     }
 
     function handleSortedList(sortedList) {
@@ -200,16 +125,12 @@ export default {
     return {
       todoListCopy,
       activeEditId,
-      showCreateModal,
       showModal,
       showCreateTodoModal,
       createTodo,
       modalSubmissionState,
       formMode,
       lastTodoId,
-      handleNewTodo,
-      handleEditTodo,
-      handleFormModeAndId,
       handleSortedList,
       updateTodoList,
       modalOptions
