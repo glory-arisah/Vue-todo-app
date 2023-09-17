@@ -1,14 +1,19 @@
 <template>
   <div>
-    <the-prompt
+    <!-- <the-prompt
       v-if="showPrompt === true"
       @response="(val) => setResponse(val)"
-    />
-    <span class="delete-message" v-show="response === 'yes'"
-      >Successfully deleted</span
-    >
-    <the-loader v-show="!todoList.length" />
+    /> -->
+    <!-- <span class="delete-message" v-show="response === 'yes'">Successfully deleted</span> -->
+    <the-loader v-show="!todoList && todoList.length" />
+
     <section class="filter" v-show="todoList.length">
+      <TheModal v-if="showModal"
+      :options="modalOptions"
+      :modalSubmissionState="modalSubmissionState"
+      @resolveModalAction="resolveModalAction"
+      @close="showModal = false"
+      />
       <p>Filters</p>
       <article class="complete-filter">
         <select data-todo-filter v-model="filter">
@@ -47,8 +52,8 @@
           <span>{{ todo.todo }}</span>
         </p>
         <div class="action-buttons">
-          <button class="edit" @click="editTodo(todo.id)">&#9998;</button>
-          <button class="del" @click="confirmDelete(todo.id)">&times;</button>
+          <button class="edit" @click="editTodoName(todo.id, todo.todo)">&#9998;</button>
+          <button class="del" @click="deleteTodo(todo.id, todo.completed)">&times;</button>
         </div>
       </article>
       </draggable>
@@ -79,16 +84,19 @@
 
 <script>
 import axios from "axios";
+import IBaseConfig from '@service/index'
 import draggable from 'vuedraggable'
-import { ref, computed, watch } from "vue";
-import ThePrompt from "./ThePrompt.vue";
-import TheLoader from "./TheLoader.vue";
+import { ref, computed, watch, reactive } from "vue";
+// import ThePrompt from "./ThePrompt.vue";
+import TheLoader from "./loader/TheLoader.vue";
+import TheModal from './TheModal.vue';
 
 export default {
   components: {
-    ThePrompt,
+    // ThePrompt,
     TheLoader,
-    draggable
+    draggable,
+    TheModal
   },
   props: {
     todoListCopy: Array,
@@ -103,6 +111,7 @@ export default {
     const page = ref(1);
     const perPage = ref(6);
     const filter = ref(0);
+
     const fromId = ref(null)
     const toId = ref(null)
 
@@ -162,35 +171,85 @@ export default {
 
     // DELETE TASK PROMPT
     const showPrompt = ref(false);
-    const response = ref(null);
+    const showModal = ref(false)
     const activeEditId = ref(null);
+    const modalSubmissionState = ref(false)
+    const modalOptions = reactive({ action: '', header: '', inputValue: '', id: null })
 
-    function setResponse(val) {
-      response.value = val;
-      showPrompt.value = false;
-      setTimeout(() => (response.value = null), 2500);
+    async function deleteTodo(todoId, isTodoCompleted) {
+      showModal.value = true
+      modalOptions.action = 'delete'
+      modalOptions.header = `${ isTodoCompleted ? 'Are you sure?' : 'Are you sure? This task has not been completed' }`
+      modalOptions.inputValue = null
+      modalOptions.id = todoId
     }
 
-    async function deleteTodo(todoId) {
+    async function handleDeletedTodo(todoId) {
       try {
-        const url = `https://dummyjson.com/todos/${todoId}`;
-        await axios.delete(url);
+        const resp = await IBaseConfig.delete(`${todoId}`)
+        if (resp?.errors) {
+          throw resp?.errors
+        }
       } catch (error) {
         console.error(error);
       }
     }
 
-    function confirmDelete(id) {
-      showPrompt.value = true;
-      if (response.value === "yes") {
-        deleteTodo(id);
-      } else return;
+    function editTodoName(id, todoName) {
+      showModal.value = true
+      modalOptions.action = 'edit'
+      modalOptions.header = `Update your task`
+      modalOptions.inputValue = todoName
+      modalOptions.id = id
+      activeEditId.value = id;
     }
 
-    function editTodo(id) {
-      activeEditId.value = id;
-      emit("setFormModeAndId", { editId: id, mode: "update" });
+    async function handleEditedTodo(todo, id) {
+      try {
+        const resp = await IBaseConfig.put(`${id}`, {
+          userId: 5,
+          todo
+        });
+        if (resp?.errors) {
+          throw resp?.errors
+        }
+      } catch (error) {
+        console.log(error);
+        return error
+      }
     }
+
+    async function resolveModalAction({ action, value, id }) {
+      modalSubmissionState.value = true
+      switch(action) {
+        case 'edit': {
+          if (!value) return;
+
+          const todoList = [...props.todoListCopy].map((todoItem) => ({
+            ...todoItem,
+            todo: todoItem.id === id ? value : todoItem.todo
+          }))
+          await handleEditedTodo(value, id)
+          emit('updateTodoList', todoList)
+          break;
+        }
+        case 'delete': {
+          const todoList = [...props.todoListCopy].filter((todoItem) => todoItem.id !== id)
+          await handleDeletedTodo(id)
+          emit('updateTodoList', todoList)
+          break;
+        }
+
+      }
+      modalSubmissionState.value = false
+      showModal.value = false
+      modalOptions.action = ''
+      modalOptions.header = ''
+      modalOptions.inputValue = ''
+      modalOptions.id = null
+    }
+
+
 
     async function handleCompletion(id, value) {
       const url = `https://dummyjson.com/todos/${id}`;
@@ -212,15 +271,17 @@ export default {
       handleDragEnd,
       todoList,
       filter,
-      response,
+      showModal,
+      modalSubmissionState,
+      // response,
       showPrompt,
       displayedRecord,
       setPage,
-      setResponse,
-      confirmDelete,
       deleteTodo,
-      editTodo,
+      editTodoName,
       handleCompletion,
+      resolveModalAction,
+      modalOptions
     };
   },
 };
@@ -239,7 +300,6 @@ $md: 40em;
 .filter {
   display: flex;
   align-items: center;
-  // justify-content: s;
   margin-top: 1rem;
   p {
     margin-right: 0.5rem;
