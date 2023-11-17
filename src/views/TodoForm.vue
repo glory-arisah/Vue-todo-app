@@ -10,7 +10,6 @@
       <form
         @submit.prevent="
           handleSubmit();
-
           $emit('submissionErrors', submissionError);
         "
       >

@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Caladea&display=swap');
+@import './checkbox.scss';
+
+$md: 40em;
+// MOBILE
+.delete-message {
+  position: absolute;
+  top: 15%;
+  color: #860404;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+  p {
+    margin-right: 0.5rem;
+    font-size: 1.05rem;
+  }
+  article {
+    select {
+      font-size: 0.9rem;
+      background-color: #fff !important;
+      padding: 0.3rem 0.7rem;
+      border-radius: 5px;
+      border: 1px solid #b4b4b4;
+    }
+  }
+  .complete-filter {
+    margin-right: 0.8rem;
+  }
+}
+.todo-list {
+  margin-top: 2rem;
+  article {
+    margin-bottom: 1.5rem;
+    box-shadow: 2px 3px 10px #969595;
+    padding: 0.8rem;
+    border-radius: 10px;
+    cursor: grab;
+
+    span {
+      font: {
+        family: 'Caladea', serif;
+        size: 1.05rem
+      }
+      margin-left: 0.5rem;
+    }
+    .action-buttons {
+      display: flex;
+      margin-top: 0.5rem;
+      justify-content: flex-end;
+      button {
+        border-radius: 50%;
+        width: 23px;
+        height: 23px;
+        line-height: 16px;
+        background-color: transparent;
+        transition: color 200ms, background-color 200ms;
+        &.edit {
+          border: 1px solid #06a15e;
+          color: #059c5a;
+          font-size: 17px;
+          &:hover {
+            color: #fff;
+            background-color: #059c5a;
+            transition: color 200ms, background-color 200ms;
+          }
+        }
+        &.del {
+          margin-left: 0.5rem;
+          border: 1px solid #e61616;
+          color: #e61616;
+          text-shadow: 0 0 1.4px #e61616;
+          font: {
+            size: 18px;
+          }
+          &:hover {
+            // border: 1px solid rgb(181, 14, 14);
+            color: #fff;
+            background-color: #e61616;
+            transition: color 200ms, background-color 200ms;
+          }
+        }
+        &:active {
+        }
+        &:hover {
+          cursor: pointer;
+        }
+      }
+    }
+  }
+}
+.page-buttons {
+  margin-top: 2rem;
+  span {
+    color: #059c5a;
+    font-weight: bold;
+    &:hover {
+      cursor: pointer;
+    }
+    &.inactive {
+      color: gray;
+      cursor: not-allowed;
+    }
+  }
+  button {
+    padding: 0.3rem 0.6rem;
+    margin-right: 1.2rem;
+    background-color: #fff;
+    border: 1px solid #04b47c;
+    border-radius: 5px;
+    &:first-of-type {
+      margin-left: 1.2rem;
+    }
+    // color: #fff;
+    &.active,
+    &:hover {
+      background-color: #04b47c;
+      color: #fff;
+      cursor: pointer;
+    }
+  }
+}
+// MEDIUM
+// @media (min-width: $md) {
+//   .todo-list {
+//     article {
+//       display: flex;
+//       justify-content: space-between;
+//     }
+//   }
+// }

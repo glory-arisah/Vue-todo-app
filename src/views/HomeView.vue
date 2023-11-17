@@ -28,7 +28,7 @@
 <script>
 import IBaseConfig from '@/service';
 import axios from "axios";
-import ThePagination from "@/components/ThePagination.vue";
+import ThePagination from "@/components/pagination/ThePagination.vue";
 import TheModalVue from '@/components/TheModal.vue';
 import  { ref, reactive } from "vue";
 
@@ -71,7 +71,6 @@ export default {
 
     getTodoList();
 
-
     const activeEditId = ref(null);
     const formMode = ref("create");
     const showModal = ref(false);
@@ -107,6 +106,7 @@ export default {
       await handleNewTodo(value, id)
       todoListCopy.value = [{ id, completed: false, todo: value, userId: 5 }, ...todoListCopy.value]
       localStorage.setItem('todoList', JSON.stringify(todoListCopy.value))
+      localStorage.setItem("lastTodoId", JSON.stringify(lastTodoId.value++));
 
       modalSubmissionState.value = false
       showModal.value = false
@@ -139,7 +139,6 @@ export default {
   async created() {},
   components: {
     ThePagination,
-    // TodoForm,
     TheModalVue
   },
 };

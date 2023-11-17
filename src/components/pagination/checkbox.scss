@@ -1,0 +1,31 @@
+.checkbox-input {
+  display: none;
+  &:checked + label .checkbox {
+    &:after {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+.checkbox {
+  border: 1px solid #059c5a;
+  border-radius: 3px;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  position: relative;
+
+  &:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 12px;
+    height: 12px;
+    background-color: #059c5a;
+    border-radius: 3px;
+    transition: 0.3s;
+  }
+}
